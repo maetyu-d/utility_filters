@@ -43,22 +43,13 @@ private:
     {
         comb = 0,
         allpass,
-        elliptic,
-        modal,
-        bank
+        elliptic
     };
 
     enum class EllipticResponse
     {
         lowpass = 0,
         highpass
-    };
-
-    enum class BankStyle
-    {
-        neutral = 0,
-        wide,
-        formant
     };
 
     struct DelayLine
@@ -68,7 +59,6 @@ private:
         float readInterpolated (float delayInSamples) const;
         void write (float sample) noexcept;
 
-        double sampleRate = 44100.0;
         std::vector<float> buffer;
         int writeIndex = 0;
     };
@@ -95,9 +85,6 @@ private:
     };
 
     static float clampFrequency (float sampleRate, float frequency) noexcept;
-    static Biquad makeBandPass (float sampleRate, float frequency, float q);
-    static Biquad makeLowPass (float sampleRate, float frequency, float q);
-    static Biquad makeNotch (float sampleRate, float frequency, float q);
     static Biquad makeBiquadFromCoefficients (const juce::dsp::IIR::Coefficients<float>& coefficients, bool highpassTransform);
     static bool approximatelyEqual (const EllipticSettings& a, const EllipticSettings& b) noexcept;
 
@@ -109,8 +96,6 @@ private:
 
     std::array<DelayLine, 2> delays;
     std::array<std::vector<Biquad>, 2> ellipticFilters;
-    std::array<std::vector<Biquad>, 2> modalFilters;
-    std::array<std::vector<Biquad>, 2> filterBankFilters;
 
     juce::SmoothedValue<float> mixSmoother;
     juce::SmoothedValue<float> outputSmoother;

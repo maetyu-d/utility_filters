@@ -3,10 +3,6 @@
 
 namespace
 {
-constexpr int maxModes = 8;
-constexpr int maxFilterBankBands = 16;
-constexpr float pi = juce::MathConstants<float>::pi;
-
 struct Preset
 {
     const char* name;
@@ -21,26 +17,21 @@ struct Preset
     float ellipticStopbandDb;
     float feedback;
     float delayMs;
-    float decay;
-    float spread;
-    int modalCount;
-    int bankCount;
-    int bankStyle;
-    float bankSpacing;
-    float bankQ;
 };
 
-const std::array<Preset, 10> factoryPresets {{
-    { "Comb Resonator", 0, 1.0f, -1.0f, 900.0f, 0.55f, 0, 0.025f, 0.5f, 72.0f, 0.82f, 12.0f, 0.55f, 1.0f, 4, 8, 0, 0.7f, 2.0f },
-    { "Comb Flange", 0, 0.72f, -2.0f, 1400.0f, 0.45f, 0, 0.025f, 0.5f, 72.0f, 0.67f, 4.8f, 0.55f, 1.1f, 4, 8, 0, 0.7f, 2.0f },
-    { "Diffusion Allpass", 1, 1.0f, -1.0f, 1200.0f, 0.5f, 0, 0.025f, 0.5f, 72.0f, 0.74f, 18.0f, 0.55f, 1.0f, 4, 8, 0, 0.7f, 2.0f },
-    { "Elliptic Lowpass", 2, 1.0f, 0.0f, 2400.0f, 0.4f, 0, 0.018f, 0.35f, 84.0f, 0.65f, 18.0f, 0.6f, 1.0f, 4, 8, 0, 0.7f, 2.0f },
-    { "Elliptic Highpass", 2, 1.0f, 0.0f, 1800.0f, 0.4f, 1, 0.02f, 0.45f, 90.0f, 0.65f, 18.0f, 0.6f, 1.0f, 4, 8, 0, 0.7f, 2.0f },
-    { "Modal Chime", 3, 1.0f, 8.0f, 760.0f, 0.55f, 0, 0.025f, 0.5f, 72.0f, 0.65f, 18.0f, 0.97f, 1.95f, 8, 8, 0, 0.7f, 2.0f },
-    { "Modal Drum Body", 3, 1.0f, 8.5f, 340.0f, 0.55f, 0, 0.025f, 0.5f, 72.0f, 0.65f, 18.0f, 0.94f, 1.05f, 8, 8, 0, 0.7f, 2.0f },
-    { "Spectral Bank", 4, 1.0f, 10.0f, 2400.0f, 0.55f, 0, 0.025f, 0.5f, 72.0f, 0.65f, 18.0f, 0.6f, 1.45f, 4, 14, 0, 0.95f, 18.0f },
-    { "Wide Smear Bank", 4, 1.0f, 9.0f, 1850.0f, 0.55f, 0, 0.025f, 0.5f, 72.0f, 0.65f, 18.0f, 0.6f, 2.35f, 4, 16, 1, 1.9f, 6.5f },
-    { "Formant Bank", 4, 1.0f, 9.5f, 1350.0f, 0.55f, 0, 0.025f, 0.5f, 72.0f, 0.65f, 18.0f, 0.6f, 0.72f, 4, 10, 2, 0.52f, 18.0f }
+const std::array<Preset, 12> factoryPresets {{
+    { "Comb Tight Notch", 0, 1.0f, -4.5f, 1200.0f, 0.65f, 0, 0.02f, 0.5f, 72.0f, 0.68f, 2.7f },
+    { "Comb Surgical Ring", 0, 1.0f, -6.5f, 1600.0f, 0.75f, 0, 0.02f, 0.5f, 72.0f, 0.84f, 5.4f },
+    { "Comb Hollow Tube", 0, 0.85f, -5.0f, 900.0f, 0.55f, 0, 0.02f, 0.5f, 72.0f, 0.76f, 9.5f },
+    { "Comb Metallic Edge", 0, 1.0f, -7.0f, 2600.0f, 0.8f, 0, 0.02f, 0.5f, 72.0f, 0.88f, 3.1f },
+    { "Allpass Tight Diffuse", 1, 1.0f, -4.0f, 1300.0f, 0.55f, 0, 0.02f, 0.5f, 72.0f, 0.62f, 7.0f },
+    { "Allpass Phase Twist", 1, 1.0f, -5.5f, 1800.0f, 0.6f, 0, 0.02f, 0.5f, 72.0f, 0.78f, 13.0f },
+    { "Allpass Glass Space", 1, 0.82f, -4.5f, 900.0f, 0.5f, 0, 0.02f, 0.5f, 72.0f, 0.7f, 21.0f },
+    { "Allpass Needle", 1, 1.0f, -3.5f, 2800.0f, 0.7f, 0, 0.02f, 0.5f, 72.0f, 0.56f, 4.2f },
+    { "Elliptic Lowpass Clean", 2, 1.0f, -0.5f, 2200.0f, 0.35f, 0, 0.012f, 0.2f, 84.0f, 0.65f, 12.0f },
+    { "Elliptic Lowpass Severe", 2, 1.0f, -1.5f, 1400.0f, 0.55f, 0, 0.008f, 0.15f, 96.0f, 0.65f, 12.0f },
+    { "Elliptic Highpass Cut", 2, 1.0f, -0.5f, 1800.0f, 0.45f, 1, 0.01f, 0.2f, 90.0f, 0.65f, 12.0f },
+    { "Elliptic Highpass Narrow", 2, 1.0f, -1.5f, 3200.0f, 0.55f, 1, 0.006f, 0.12f, 108.0f, 0.65f, 12.0f }
 }};
 
 void setParameterValue (juce::AudioProcessorValueTreeState& apvts, const juce::String& parameterID, float value)
@@ -62,13 +53,6 @@ void loadPreset (juce::AudioProcessorValueTreeState& apvts, const Preset& preset
     setParameterValue (apvts, "ellipticStopbandDb", preset.ellipticStopbandDb);
     setParameterValue (apvts, "feedback", preset.feedback);
     setParameterValue (apvts, "delayMs", preset.delayMs);
-    setParameterValue (apvts, "decay", preset.decay);
-    setParameterValue (apvts, "spread", preset.spread);
-    setParameterValue (apvts, "modalCount", static_cast<float> (preset.modalCount));
-    setParameterValue (apvts, "bankCount", static_cast<float> (preset.bankCount));
-    setParameterValue (apvts, "bankStyle", static_cast<float> (preset.bankStyle));
-    setParameterValue (apvts, "bankSpacing", preset.bankSpacing);
-    setParameterValue (apvts, "bankQ", preset.bankQ);
 }
 }
 
@@ -86,7 +70,7 @@ auto UtilityFiltersAudioProcessor::createParameterLayout() -> APVTS::ParameterLa
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> ("mode", "Mode",
-                                                                     juce::StringArray { "Comb", "Allpass", "Elliptic", "Modal", "Filter Bank" }, 0));
+                                                                     juce::StringArray { "Comb", "Allpass", "Elliptic" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("mix", "Mix", juce::NormalisableRange<float> (0.0f, 1.0f), 1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("output", "Output", juce::NormalisableRange<float> (-24.0f, 24.0f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("cutoff", "Cutoff", juce::NormalisableRange<float> (20.0f, 18000.0f, 0.0f, 0.35f), 1200.0f));
@@ -94,21 +78,13 @@ auto UtilityFiltersAudioProcessor::createParameterLayout() -> APVTS::ParameterLa
     params.push_back (std::make_unique<juce::AudioParameterChoice> ("ellipticResponse", "Elliptic Response",
                                                                      juce::StringArray { "Lowpass", "Highpass" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("ellipticTransition", "Elliptic Transition",
-                                                                    juce::NormalisableRange<float> (0.002f, 0.12f, 0.0f, 0.45f), 0.025f));
+                                                                    juce::NormalisableRange<float> (0.002f, 0.08f, 0.0f, 0.45f), 0.012f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("ellipticRippleDb", "Elliptic Ripple",
-                                                                    juce::NormalisableRange<float> (0.1f, 3.0f, 0.0f, 0.4f), 0.5f));
+                                                                    juce::NormalisableRange<float> (0.1f, 2.0f, 0.0f, 0.4f), 0.3f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("ellipticStopbandDb", "Elliptic Stopband",
-                                                                    juce::NormalisableRange<float> (24.0f, 120.0f, 0.0f, 0.45f), 72.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("feedback", "Feedback", juce::NormalisableRange<float> (-0.97f, 0.97f), 0.65f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("delayMs", "Delay", juce::NormalisableRange<float> (1.0f, 100.0f), 18.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("decay", "Decay", juce::NormalisableRange<float> (0.1f, 0.99f), 0.6f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("spread", "Spread", juce::NormalisableRange<float> (0.1f, 4.0f), 1.0f));
-    params.push_back (std::make_unique<juce::AudioParameterInt> ("modalCount", "Modal Count", 1, maxModes, 4));
-    params.push_back (std::make_unique<juce::AudioParameterInt> ("bankCount", "Bank Count", 2, maxFilterBankBands, 8));
-    params.push_back (std::make_unique<juce::AudioParameterChoice> ("bankStyle", "Bank Style",
-                                                                     juce::StringArray { "Neutral", "Wide", "Formant" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("bankSpacing", "Bank Spacing", juce::NormalisableRange<float> (0.25f, 2.5f), 0.7f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("bankQ", "Bank Q", juce::NormalisableRange<float> (0.2f, 18.0f, 0.0f, 0.35f), 2.0f));
+                                                                    juce::NormalisableRange<float> (48.0f, 120.0f, 0.0f, 0.45f), 90.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> ("feedback", "Feedback", juce::NormalisableRange<float> (-0.95f, 0.95f), 0.68f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> ("delayMs", "Delay", juce::NormalisableRange<float> (0.8f, 40.0f, 0.0f, 0.35f), 6.0f));
 
     return { params.begin(), params.end() };
 }
@@ -121,15 +97,15 @@ const juce::String UtilityFiltersAudioProcessor::getName() const
 bool UtilityFiltersAudioProcessor::acceptsMidi() const { return false; }
 bool UtilityFiltersAudioProcessor::producesMidi() const { return false; }
 bool UtilityFiltersAudioProcessor::isMidiEffect() const { return false; }
-double UtilityFiltersAudioProcessor::getTailLengthSeconds() const { return 2.0; }
+double UtilityFiltersAudioProcessor::getTailLengthSeconds() const { return 1.0; }
 
 int UtilityFiltersAudioProcessor::getNumPrograms() { return static_cast<int> (factoryPresets.size()); }
 int UtilityFiltersAudioProcessor::getCurrentProgram() { return currentProgram; }
+
 void UtilityFiltersAudioProcessor::setCurrentProgram (int index)
 {
     auto clampedIndex = juce::jlimit (0, getNumPrograms() - 1, index);
     currentProgram = clampedIndex;
-
     loadPreset (apvts, factoryPresets[static_cast<size_t> (clampedIndex)]);
     resetProcessors();
     lastEllipticSettings = {};
@@ -151,12 +127,8 @@ void UtilityFiltersAudioProcessor::prepareToPlay (double sampleRate, int)
     currentSampleRate = sampleRate;
 
     for (auto& delay : delays)
-        delay.prepare (sampleRate, static_cast<int> (sampleRate * 0.12));
+        delay.prepare (sampleRate, static_cast<int> (sampleRate * 0.06));
 
-    modalFilters[0].resize (maxModes);
-    modalFilters[1].resize (maxModes);
-    filterBankFilters[0].resize (maxFilterBankBands);
-    filterBankFilters[1].resize (maxFilterBankBands);
     ellipticFilters[0].clear();
     ellipticFilters[1].clear();
 
@@ -182,60 +154,9 @@ bool UtilityFiltersAudioProcessor::isBusesLayoutSupported (const BusesLayout& la
 
 void UtilityFiltersAudioProcessor::updateDspState()
 {
-    auto cutoff = apvts.getRawParameterValue ("cutoff")->load();
-    auto resonance = apvts.getRawParameterValue ("resonance")->load();
-    auto spread = apvts.getRawParameterValue ("spread")->load();
-    auto bankStyle = static_cast<BankStyle> (apvts.getRawParameterValue ("bankStyle")->load());
-    auto bankSpacing = apvts.getRawParameterValue ("bankSpacing")->load();
-    auto bankQ = apvts.getRawParameterValue ("bankQ")->load();
-    auto decay = apvts.getRawParameterValue ("decay")->load();
-
     mixSmoother.setTargetValue (apvts.getRawParameterValue ("mix")->load());
     outputSmoother.setTargetValue (juce::Decibels::decibelsToGain (apvts.getRawParameterValue ("output")->load()));
     updateEllipticFiltersIfNeeded();
-
-    for (int ch = 0; ch < 2; ++ch)
-    {
-        for (int i = 0; i < maxModes; ++i)
-        {
-            auto partial = static_cast<float> (i + 1);
-            auto modalFrequency = cutoff * std::pow (1.0f + (spread * 0.22f), partial);
-            auto precisionQ = juce::jmap (resonance, 0.1f, 1.0f, 0.8f, 4.0f);
-            auto modeQ = (juce::jmap (decay, 0.1f, 0.99f, 1.2f, 18.0f) * precisionQ) / std::pow (partial, 0.85f);
-            modalFilters[static_cast<size_t> (ch)][static_cast<size_t> (i)] = makeBandPass (static_cast<float> (currentSampleRate), modalFrequency, juce::jmax (0.35f, modeQ));
-        }
-
-        for (int i = 0; i < maxFilterBankBands; ++i)
-        {
-            auto centered = static_cast<float> (i) - (static_cast<float> (maxFilterBankBands) - 1.0f) * 0.5f;
-            auto styleSpacing = bankSpacing;
-            auto styleQ = bankQ * juce::jmap (resonance, 0.1f, 1.0f, 0.85f, 2.25f);
-            auto frequencySkew = 0.0f;
-
-            switch (bankStyle)
-            {
-                case BankStyle::neutral:
-                    break;
-
-                case BankStyle::wide:
-                    styleSpacing *= 1.45f;
-                    styleQ = juce::jmax (0.35f, styleQ * 0.55f);
-                    frequencySkew = 0.08f * centered * centered;
-                    break;
-
-                case BankStyle::formant:
-                    styleSpacing *= 0.62f;
-                    styleQ *= 1.45f;
-                    frequencySkew = -0.035f * centered * centered;
-                    break;
-            }
-
-            auto multiplier = std::pow (2.0f, centered * styleSpacing * 0.33f) * (1.0f + frequencySkew);
-            filterBankFilters[static_cast<size_t> (ch)][static_cast<size_t> (i)] = makeBandPass (static_cast<float> (currentSampleRate),
-                                                                                                   cutoff * multiplier,
-                                                                                                   styleQ);
-        }
-    }
 }
 
 void UtilityFiltersAudioProcessor::resetProcessors()
@@ -244,14 +165,6 @@ void UtilityFiltersAudioProcessor::resetProcessors()
         delay.reset();
 
     for (auto& channel : ellipticFilters)
-        for (auto& biquad : channel)
-            biquad.reset();
-
-    for (auto& channel : modalFilters)
-        for (auto& biquad : channel)
-            biquad.reset();
-
-    for (auto& channel : filterBankFilters)
         for (auto& biquad : channel)
             biquad.reset();
 }
@@ -301,6 +214,11 @@ auto UtilityFiltersAudioProcessor::makeBiquadFromCoefficients (const juce::dsp::
     return biquad;
 }
 
+float UtilityFiltersAudioProcessor::clampFrequency (float sampleRate, float frequency) noexcept
+{
+    return juce::jlimit (20.0f, (sampleRate * 0.5f) - 200.0f, frequency);
+}
+
 void UtilityFiltersAudioProcessor::updateEllipticFiltersIfNeeded()
 {
     auto cutoff = clampFrequency (static_cast<float> (currentSampleRate), apvts.getRawParameterValue ("cutoff")->load());
@@ -310,7 +228,7 @@ void UtilityFiltersAudioProcessor::updateEllipticFiltersIfNeeded()
     auto stopbandDb = apvts.getRawParameterValue ("ellipticStopbandDb")->load();
 
     auto normalisedCutoff = cutoff / static_cast<float> (currentSampleRate);
-    auto maxTransition = juce::jmax (0.002f, (juce::jmin (normalisedCutoff, 0.5f - normalisedCutoff) * 1.8f));
+    auto maxTransition = juce::jmax (0.002f, (juce::jmin (normalisedCutoff, 0.5f - normalisedCutoff) * 1.6f));
     transition = juce::jlimit (0.002f, maxTransition, transition);
 
     EllipticSettings currentSettings { response, cutoff, transition, rippleDb, stopbandDb };
@@ -325,7 +243,7 @@ void UtilityFiltersAudioProcessor::updateEllipticFiltersIfNeeded()
     {
         designFrequency = clampFrequency (static_cast<float> (currentSampleRate), static_cast<float> (currentSampleRate * 0.5) - cutoff);
         auto mirroredNormalised = designFrequency / static_cast<float> (currentSampleRate);
-        auto mirroredMaxTransition = juce::jmax (0.002f, (juce::jmin (mirroredNormalised, 0.5f - mirroredNormalised) * 1.8f));
+        auto mirroredMaxTransition = juce::jmax (0.002f, (juce::jmin (mirroredNormalised, 0.5f - mirroredNormalised) * 1.6f));
         transition = juce::jlimit (0.002f, mirroredMaxTransition, transition);
         highpassTransform = true;
     }
@@ -363,11 +281,7 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     auto feedback = apvts.getRawParameterValue ("feedback")->load();
     auto delayMs = apvts.getRawParameterValue ("delayMs")->load();
     auto delaySamples = delayMs * 0.001f * static_cast<float> (currentSampleRate);
-    auto decay = apvts.getRawParameterValue ("decay")->load();
     auto resonance = apvts.getRawParameterValue ("resonance")->load();
-    auto modalCount = static_cast<int> (apvts.getRawParameterValue ("modalCount")->load());
-    auto bankCount = static_cast<int> (apvts.getRawParameterValue ("bankCount")->load());
-    auto bankStyle = static_cast<BankStyle> (apvts.getRawParameterValue ("bankStyle")->load());
 
     for (int channel = 0; channel < totalInputChannels; ++channel)
     {
@@ -384,7 +298,7 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
                 case FilterMode::comb:
                 {
                     auto delayed = delay.readInterpolated (delaySamples);
-                    wet = delayed;
+                    wet = delayed * juce::jmap (resonance, 0.1f, 1.0f, 0.8f, 1.15f);
                     delay.write (dry + (delayed * feedback));
                     break;
                 }
@@ -392,7 +306,7 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
                 case FilterMode::allpass:
                 {
                     auto delayed = delay.readInterpolated (delaySamples);
-                    wet = (-feedback * dry) + delayed;
+                    wet = ((-feedback * dry) + delayed) * juce::jmap (resonance, 0.1f, 1.0f, 0.9f, 1.1f);
                     delay.write (dry + (wet * feedback));
                     break;
                 }
@@ -404,40 +318,6 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
                     for (auto& biquad : ellipticFilters[static_cast<size_t> (channel)])
                         wet = biquad.process (wet);
 
-                    break;
-                }
-
-                case FilterMode::modal:
-                {
-                    wet = 0.0f;
-                    for (int i = 0; i < modalCount; ++i)
-                    {
-                        auto partialIndex = static_cast<float> (i);
-                        auto modeGain = (std::pow (decay, partialIndex * 0.32f) * juce::jmap (resonance, 0.1f, 1.0f, 0.8f, 1.35f))
-                                      / (1.0f + (partialIndex * 0.35f));
-                        wet += modalFilters[static_cast<size_t> (channel)][static_cast<size_t> (i)].process (dry) * modeGain;
-                    }
-                    wet *= 1.35f / std::sqrt (static_cast<float> (modalCount));
-                    break;
-                }
-
-                case FilterMode::bank:
-                {
-                    wet = 0.0f;
-                    auto startIndex = (maxFilterBankBands - bankCount) / 2;
-                    auto endIndex = startIndex + bankCount;
-
-                    for (int i = startIndex; i < endIndex; ++i)
-                        wet += filterBankFilters[static_cast<size_t> (channel)][static_cast<size_t> (i)].process (dry);
-
-                    auto bankGain = juce::jmap (static_cast<float> (bankCount), 2.0f, static_cast<float> (maxFilterBankBands), 0.75f, 1.15f);
-
-                    if (bankStyle == BankStyle::wide)
-                        bankGain *= 1.08f;
-                    else if (bankStyle == BankStyle::formant)
-                        bankGain *= 0.95f;
-
-                    wet *= bankGain / std::sqrt (static_cast<float> (bankCount));
                     break;
                 }
             }
@@ -472,9 +352,8 @@ void UtilityFiltersAudioProcessor::setStateInformation (const void* data, int si
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
 }
 
-void UtilityFiltersAudioProcessor::DelayLine::prepare (double newSampleRate, int maximumDelaySamples)
+void UtilityFiltersAudioProcessor::DelayLine::prepare (double, int maximumDelaySamples)
 {
-    sampleRate = newSampleRate;
     buffer.assign (static_cast<size_t> (maximumDelaySamples + 2), 0.0f);
     writeIndex = 0;
 }
@@ -534,68 +413,6 @@ float UtilityFiltersAudioProcessor::Biquad::process (float input) noexcept
     y2 = y1;
     y1 = output;
     return output;
-}
-
-float UtilityFiltersAudioProcessor::clampFrequency (float sampleRate, float frequency) noexcept
-{
-    return juce::jlimit (20.0f, (sampleRate * 0.5f) - 200.0f, frequency);
-}
-
-auto UtilityFiltersAudioProcessor::makeBandPass (float sampleRate, float frequency, float q) -> Biquad
-{
-    Biquad biquad;
-    frequency = clampFrequency (sampleRate, frequency);
-    q = juce::jmax (0.1f, q);
-
-    auto w0 = 2.0f * pi * frequency / sampleRate;
-    auto alpha = std::sin (w0) / (2.0f * q);
-    auto cosw0 = std::cos (w0);
-    auto a0 = 1.0f + alpha;
-
-    biquad.setCoefficients (alpha / a0,
-                            0.0f,
-                            (-alpha) / a0,
-                            (-2.0f * cosw0) / a0,
-                            (1.0f - alpha) / a0);
-    return biquad;
-}
-
-auto UtilityFiltersAudioProcessor::makeLowPass (float sampleRate, float frequency, float q) -> Biquad
-{
-    Biquad biquad;
-    frequency = clampFrequency (sampleRate, frequency);
-    q = juce::jmax (0.1f, q);
-
-    auto w0 = 2.0f * pi * frequency / sampleRate;
-    auto alpha = std::sin (w0) / (2.0f * q);
-    auto cosw0 = std::cos (w0);
-    auto a0 = 1.0f + alpha;
-
-    biquad.setCoefficients (((1.0f - cosw0) * 0.5f) / a0,
-                            (1.0f - cosw0) / a0,
-                            ((1.0f - cosw0) * 0.5f) / a0,
-                            (-2.0f * cosw0) / a0,
-                            (1.0f - alpha) / a0);
-    return biquad;
-}
-
-auto UtilityFiltersAudioProcessor::makeNotch (float sampleRate, float frequency, float q) -> Biquad
-{
-    Biquad biquad;
-    frequency = clampFrequency (sampleRate, frequency);
-    q = juce::jmax (0.1f, q);
-
-    auto w0 = 2.0f * pi * frequency / sampleRate;
-    auto alpha = std::sin (w0) / (2.0f * q);
-    auto cosw0 = std::cos (w0);
-    auto a0 = 1.0f + alpha;
-
-    biquad.setCoefficients (1.0f / a0,
-                            (-2.0f * cosw0) / a0,
-                            1.0f / a0,
-                            (-2.0f * cosw0) / a0,
-                            (1.0f - alpha) / a0);
-    return biquad;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
