@@ -183,6 +183,7 @@ bool UtilityFiltersAudioProcessor::isBusesLayoutSupported (const BusesLayout& la
 void UtilityFiltersAudioProcessor::updateDspState()
 {
     auto cutoff = apvts.getRawParameterValue ("cutoff")->load();
+    auto resonance = apvts.getRawParameterValue ("resonance")->load();
     auto spread = apvts.getRawParameterValue ("spread")->load();
     auto bankStyle = static_cast<BankStyle> (apvts.getRawParameterValue ("bankStyle")->load());
     auto bankSpacing = apvts.getRawParameterValue ("bankSpacing")->load();
@@ -199,7 +200,8 @@ void UtilityFiltersAudioProcessor::updateDspState()
         {
             auto partial = static_cast<float> (i + 1);
             auto modalFrequency = cutoff * std::pow (1.0f + (spread * 0.22f), partial);
-            auto modeQ = juce::jmap (decay, 0.1f, 0.99f, 0.8f, 25.0f) / partial;
+            auto precisionQ = juce::jmap (resonance, 0.1f, 1.0f, 0.8f, 4.0f);
+            auto modeQ = (juce::jmap (decay, 0.1f, 0.99f, 1.2f, 18.0f) * precisionQ) / std::pow (partial, 0.85f);
             modalFilters[static_cast<size_t> (ch)][static_cast<size_t> (i)] = makeBandPass (static_cast<float> (currentSampleRate), modalFrequency, juce::jmax (0.35f, modeQ));
         }
 
@@ -207,7 +209,7 @@ void UtilityFiltersAudioProcessor::updateDspState()
         {
             auto centered = static_cast<float> (i) - (static_cast<float> (maxFilterBankBands) - 1.0f) * 0.5f;
             auto styleSpacing = bankSpacing;
-            auto styleQ = bankQ;
+            auto styleQ = bankQ * juce::jmap (resonance, 0.1f, 1.0f, 0.85f, 2.25f);
             auto frequencySkew = 0.0f;
 
             switch (bankStyle)
@@ -217,13 +219,13 @@ void UtilityFiltersAudioProcessor::updateDspState()
 
                 case BankStyle::wide:
                     styleSpacing *= 1.45f;
-                    styleQ = juce::jmax (0.25f, bankQ * 0.55f);
+                    styleQ = juce::jmax (0.35f, styleQ * 0.55f);
                     frequencySkew = 0.08f * centered * centered;
                     break;
 
                 case BankStyle::formant:
                     styleSpacing *= 0.62f;
-                    styleQ = bankQ * 1.5f;
+                    styleQ *= 1.45f;
                     frequencySkew = -0.035f * centered * centered;
                     break;
             }
@@ -362,6 +364,7 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     auto delayMs = apvts.getRawParameterValue ("delayMs")->load();
     auto delaySamples = delayMs * 0.001f * static_cast<float> (currentSampleRate);
     auto decay = apvts.getRawParameterValue ("decay")->load();
+    auto resonance = apvts.getRawParameterValue ("resonance")->load();
     auto modalCount = static_cast<int> (apvts.getRawParameterValue ("modalCount")->load());
     auto bankCount = static_cast<int> (apvts.getRawParameterValue ("bankCount")->load());
     auto bankStyle = static_cast<BankStyle> (apvts.getRawParameterValue ("bankStyle")->load());
@@ -381,7 +384,7 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
                 case FilterMode::comb:
                 {
                     auto delayed = delay.readInterpolated (delaySamples);
-                    wet = dry + delayed;
+                    wet = delayed;
                     delay.write (dry + (delayed * feedback));
                     break;
                 }
@@ -410,10 +413,11 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
                     for (int i = 0; i < modalCount; ++i)
                     {
                         auto partialIndex = static_cast<float> (i);
-                        auto modeGain = std::pow (decay, partialIndex * 0.22f) / (1.0f + (partialIndex * 0.18f));
+                        auto modeGain = (std::pow (decay, partialIndex * 0.32f) * juce::jmap (resonance, 0.1f, 1.0f, 0.8f, 1.35f))
+                                      / (1.0f + (partialIndex * 0.35f));
                         wet += modalFilters[static_cast<size_t> (channel)][static_cast<size_t> (i)].process (dry) * modeGain;
                     }
-                    wet *= 2.6f;
+                    wet *= 1.35f / std::sqrt (static_cast<float> (modalCount));
                     break;
                 }
 
@@ -429,11 +433,11 @@ void UtilityFiltersAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
                     auto bankGain = juce::jmap (static_cast<float> (bankCount), 2.0f, static_cast<float> (maxFilterBankBands), 0.75f, 1.15f);
 
                     if (bankStyle == BankStyle::wide)
-                        bankGain *= 1.18f;
-                    else if (bankStyle == BankStyle::formant)
                         bankGain *= 1.08f;
+                    else if (bankStyle == BankStyle::formant)
+                        bankGain *= 0.95f;
 
-                    wet *= bankGain;
+                    wet *= bankGain / std::sqrt (static_cast<float> (bankCount));
                     break;
                 }
             }

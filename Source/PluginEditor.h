@@ -25,6 +25,8 @@ private:
     void configureTabButton (juce::TextButton& button, const juce::String& title);
     void setPage (Page newPage);
     void updatePageVisibility();
+    void updateModePresentation();
+    int getSelectedModeIndex() const;
 
     UtilityFiltersAudioProcessor& audioProcessor;
     Page currentPage = Page::core;

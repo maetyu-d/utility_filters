@@ -66,9 +66,10 @@ UtilityFiltersAudioProcessorEditor::UtilityFiltersAudioProcessorEditor (UtilityF
     bankCountAttachment = std::make_unique<SliderAttachment> (audioProcessor.apvts, "bankCount", bankCountSlider);
     bankSpacingAttachment = std::make_unique<SliderAttachment> (audioProcessor.apvts, "bankSpacing", bankSpacingSlider);
     bankQAttachment = std::make_unique<SliderAttachment> (audioProcessor.apvts, "bankQ", bankQSlider);
+    modeBox.onChange = [this] { updateModePresentation(); };
 
     setSize (920, 620);
-    setPage (Page::core);
+    updateModePresentation();
 }
 
 UtilityFiltersAudioProcessorEditor::~UtilityFiltersAudioProcessorEditor() = default;
@@ -108,6 +109,11 @@ void UtilityFiltersAudioProcessorEditor::updatePageVisibility()
 {
     const auto showCore = currentPage == Page::core;
     const auto showResonators = currentPage == Page::resonators;
+    const auto modeIndex = getSelectedModeIndex();
+    const auto isCombLike = modeIndex == 0 || modeIndex == 1;
+    const auto isElliptic = modeIndex == 2;
+    const auto isModal = modeIndex == 3;
+    const auto isBank = modeIndex == 4;
 
     corePageButton.setColour (juce::TextButton::buttonColourId,
                               showCore ? juce::Colour::fromRGB (248, 180, 83)
@@ -124,37 +130,47 @@ void UtilityFiltersAudioProcessorEditor::updatePageVisibility()
     bankStyleLabel.setVisible (showResonators);
     bankStyleBox.setVisible (showResonators);
 
-    mixLabel.setVisible (showCore);
-    mixSlider.setVisible (showCore);
-    outputLabel.setVisible (showCore);
-    outputSlider.setVisible (showCore);
-    cutoffLabel.setVisible (showCore || showResonators);
-    cutoffSlider.setVisible (showCore || showResonators);
-    resonanceLabel.setVisible (showCore);
-    resonanceSlider.setVisible (showCore);
-    ellipticTransitionLabel.setVisible (showCore);
-    ellipticTransitionSlider.setVisible (showCore);
-    ellipticRippleLabel.setVisible (showCore);
-    ellipticRippleSlider.setVisible (showCore);
-    ellipticStopbandLabel.setVisible (showCore);
-    ellipticStopbandSlider.setVisible (showCore);
-    feedbackLabel.setVisible (showCore);
-    feedbackSlider.setVisible (showCore);
-    delayLabel.setVisible (showCore);
-    delaySlider.setVisible (showCore);
+    mixLabel.setVisible (showCore || showResonators);
+    mixSlider.setVisible (showCore || showResonators);
+    outputLabel.setVisible (showCore || showResonators);
+    outputSlider.setVisible (showCore || showResonators);
+    cutoffLabel.setVisible ((showCore && isElliptic) || (showResonators && (isModal || isBank)));
+    cutoffSlider.setVisible ((showCore && isElliptic) || (showResonators && (isModal || isBank)));
+    resonanceLabel.setVisible ((showCore && isElliptic) || showResonators);
+    resonanceSlider.setVisible ((showCore && isElliptic) || showResonators);
+    ellipticTransitionLabel.setVisible (showCore && isElliptic);
+    ellipticTransitionSlider.setVisible (showCore && isElliptic);
+    ellipticRippleLabel.setVisible (showCore && isElliptic);
+    ellipticRippleSlider.setVisible (showCore && isElliptic);
+    ellipticStopbandLabel.setVisible (showCore && isElliptic);
+    ellipticStopbandSlider.setVisible (showCore && isElliptic);
+    feedbackLabel.setVisible (showCore && isCombLike);
+    feedbackSlider.setVisible (showCore && isCombLike);
+    delayLabel.setVisible (showCore && isCombLike);
+    delaySlider.setVisible (showCore && isCombLike);
 
-    decayLabel.setVisible (showResonators);
-    decaySlider.setVisible (showResonators);
-    spreadLabel.setVisible (showResonators);
-    spreadSlider.setVisible (showResonators);
-    modalCountLabel.setVisible (showResonators);
-    modalCountSlider.setVisible (showResonators);
-    bankCountLabel.setVisible (showResonators);
-    bankCountSlider.setVisible (showResonators);
-    bankSpacingLabel.setVisible (showResonators);
-    bankSpacingSlider.setVisible (showResonators);
-    bankQLabel.setVisible (showResonators);
-    bankQSlider.setVisible (showResonators);
+    decayLabel.setVisible (showResonators && isModal);
+    decaySlider.setVisible (showResonators && isModal);
+    spreadLabel.setVisible (showResonators && (isModal || isBank));
+    spreadSlider.setVisible (showResonators && (isModal || isBank));
+    modalCountLabel.setVisible (showResonators && isModal);
+    modalCountSlider.setVisible (showResonators && isModal);
+    bankCountLabel.setVisible (showResonators && isBank);
+    bankCountSlider.setVisible (showResonators && isBank);
+    bankSpacingLabel.setVisible (showResonators && isBank);
+    bankSpacingSlider.setVisible (showResonators && isBank);
+    bankQLabel.setVisible (showResonators && isBank);
+    bankQSlider.setVisible (showResonators && isBank);
+}
+
+int UtilityFiltersAudioProcessorEditor::getSelectedModeIndex() const
+{
+    return juce::jmax (0, modeBox.getSelectedItemIndex());
+}
+
+void UtilityFiltersAudioProcessorEditor::updateModePresentation()
+{
+    setPage (getSelectedModeIndex() <= 2 ? Page::core : Page::resonators);
 }
 
 void UtilityFiltersAudioProcessorEditor::paint (juce::Graphics& g)
@@ -207,19 +223,19 @@ void UtilityFiltersAudioProcessorEditor::resized()
         auto topRow = grid.removeFromTop (170);
         auto bottomRow = grid.removeFromTop (170);
 
-        const std::array<std::pair<juce::Slider*, juce::Label*>, 5> topControls {{
+        const std::array<std::pair<juce::Slider*, juce::Label*>, 4> topControls {{
             { &mixSlider, &mixLabel },
             { &outputSlider, &outputLabel },
-            { &cutoffSlider, &cutoffLabel },
-            { &resonanceSlider, &resonanceLabel },
-            { &feedbackSlider, &feedbackLabel }
+            { &feedbackSlider, &feedbackLabel },
+            { &delaySlider, &delayLabel }
         }};
 
-        const std::array<std::pair<juce::Slider*, juce::Label*>, 4> bottomControls {{
+        const std::array<std::pair<juce::Slider*, juce::Label*>, 5> bottomControls {{
+            { &cutoffSlider, &cutoffLabel },
+            { &resonanceSlider, &resonanceLabel },
             { &ellipticTransitionSlider, &ellipticTransitionLabel },
             { &ellipticRippleSlider, &ellipticRippleLabel },
-            { &ellipticStopbandSlider, &ellipticStopbandLabel },
-            { &delaySlider, &delayLabel }
+            { &ellipticStopbandSlider, &ellipticStopbandLabel }
         }};
 
         for (auto [slider, label] : topControls)
@@ -237,15 +253,18 @@ void UtilityFiltersAudioProcessorEditor::resized()
         auto topRow = grid.removeFromTop (170);
         auto bottomRow = grid.removeFromTop (170);
 
-        const std::array<std::pair<juce::Slider*, juce::Label*>, 5> topControls {{
+        const std::array<std::pair<juce::Slider*, juce::Label*>, 6> topControls {{
+            { &mixSlider, &mixLabel },
+            { &outputSlider, &outputLabel },
             { &cutoffSlider, &cutoffLabel },
-            { &decaySlider, &decayLabel },
+            { &resonanceSlider, &resonanceLabel },
             { &spreadSlider, &spreadLabel },
-            { &modalCountSlider, &modalCountLabel },
-            { &bankCountSlider, &bankCountLabel }
+            { &decaySlider, &decayLabel }
         }};
 
-        const std::array<std::pair<juce::Slider*, juce::Label*>, 2> bottomControls {{
+        const std::array<std::pair<juce::Slider*, juce::Label*>, 4> bottomControls {{
+            { &modalCountSlider, &modalCountLabel },
+            { &bankCountSlider, &bankCountLabel },
             { &bankSpacingSlider, &bankSpacingLabel },
             { &bankQSlider, &bankQLabel }
         }};
