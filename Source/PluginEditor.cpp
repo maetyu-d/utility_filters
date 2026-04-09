@@ -92,8 +92,9 @@ void UtilityFiltersAudioProcessorEditor::configureTabButton (juce::TextButton& b
     button.setButtonText (title);
     button.setClickingTogglesState (false);
     button.setColour (juce::TextButton::buttonOnColourId, juce::Colour::fromRGB (248, 180, 83));
-    button.setColour (juce::TextButton::buttonColourId, juce::Colour::fromRGBA (255, 255, 255, 24));
+    button.setColour (juce::TextButton::buttonColourId, juce::Colour::fromRGBA (255, 255, 255, 18));
     button.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
+    button.setColour (juce::TextButton::textColourOnId, juce::Colour::fromRGB (24, 22, 18));
     addAndMakeVisible (button);
 }
 
@@ -176,19 +177,52 @@ void UtilityFiltersAudioProcessorEditor::updateModePresentation()
 void UtilityFiltersAudioProcessorEditor::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    juce::ColourGradient gradient (juce::Colour::fromRGB (19, 24, 31), bounds.getTopLeft(),
-                                   juce::Colour::fromRGB (47, 60, 76), bounds.getBottomRight(), false);
+    juce::ColourGradient gradient (juce::Colour::fromRGB (13, 18, 24), bounds.getTopLeft(),
+                                   juce::Colour::fromRGB (38, 49, 60), bounds.getBottomRight(), false);
     g.setGradientFill (gradient);
     g.fillAll();
 
-    g.setColour (juce::Colour::fromRGB (255, 255, 255).withAlpha (0.08f));
-    g.fillRoundedRectangle (20.0f, 20.0f, bounds.getWidth() - 40.0f, bounds.getHeight() - 40.0f, 24.0f);
+    g.setColour (juce::Colour::fromRGB (255, 255, 255).withAlpha (0.05f));
+    g.fillRoundedRectangle (20.0f, 20.0f, bounds.getWidth() - 40.0f, bounds.getHeight() - 40.0f, 26.0f);
 
-    g.setColour (juce::Colour::fromRGB (255, 206, 142).withAlpha (0.12f));
-    g.fillEllipse (560.0f, 36.0f, 180.0f, 180.0f);
+    g.setColour (juce::Colour::fromRGB (255, 206, 142).withAlpha (0.10f));
+    g.fillEllipse (610.0f, 24.0f, 210.0f, 210.0f);
+    g.setColour (juce::Colour::fromRGB (111, 182, 204).withAlpha (0.08f));
+    g.fillEllipse (40.0f, 380.0f, 240.0f, 180.0f);
 
     g.setColour (juce::Colour::fromRGB (255, 255, 255).withAlpha (0.1f));
-    g.drawRoundedRectangle (20.0f, 20.0f, bounds.getWidth() - 40.0f, bounds.getHeight() - 40.0f, 24.0f, 1.0f);
+    g.drawRoundedRectangle (20.0f, 20.0f, bounds.getWidth() - 40.0f, bounds.getHeight() - 40.0f, 26.0f, 1.0f);
+
+    const auto panel = bounds.reduced (34.0f);
+    const auto contentTop = panel.getY() + 118.0f;
+    const auto contentHeight = panel.getBottom() - contentTop - 20.0f;
+    drawPanel (g,
+               { panel.getX(), contentTop, panel.getWidth(), contentHeight },
+               currentPage == Page::core ? "Core Shapes" : "Resonator Matrix",
+               currentPage == Page::core
+                   ? "Focused controls for comb, allpass, and elliptic work."
+                   : "Modal and bank tools with tighter, mode-specific control.");
+}
+
+void UtilityFiltersAudioProcessorEditor::drawPanel (juce::Graphics& g,
+                                                    juce::Rectangle<float> bounds,
+                                                    const juce::String& title,
+                                                    const juce::String& subtitle)
+{
+    g.setColour (juce::Colour::fromRGBA (255, 255, 255, 16));
+    g.fillRoundedRectangle (bounds, 22.0f);
+
+    g.setColour (juce::Colour::fromRGBA (255, 255, 255, 26));
+    g.drawRoundedRectangle (bounds, 22.0f, 1.0f);
+
+    auto header = bounds.reduced (18.0f, 14.0f).removeFromTop (40.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.95f));
+    g.setFont (juce::FontOptions (18.0f, juce::Font::bold));
+    g.drawText (title, header.toNearestInt(), juce::Justification::centredLeft, false);
+
+    g.setColour (juce::Colours::white.withAlpha (0.6f));
+    g.setFont (juce::FontOptions (13.0f));
+    g.drawText (subtitle, header.withY (header.getY() + 20.0f).toNearestInt(), juce::Justification::centredLeft, false);
 }
 
 void UtilityFiltersAudioProcessorEditor::resized()

@@ -27,6 +27,7 @@ private:
     void updatePageVisibility();
     void updateModePresentation();
     int getSelectedModeIndex() const;
+    void drawPanel (juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& title, const juce::String& subtitle);
 
     UtilityFiltersAudioProcessor& audioProcessor;
     Page currentPage = Page::core;
